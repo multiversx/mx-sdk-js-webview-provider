@@ -98,7 +98,7 @@ export class WebviewProvider implements IDAppProviderBase {
     return response?.[0];
   };
 
-  async signMessage(message: SignableMessage): Promise<SignableMessage | null> {
+  signMessage = async (message: SignableMessage): Promise<SignableMessage | null> => {
     const response = await this.sendPostMessage({
       type: CrossWindowProviderRequestEnums.signMessageRequest,
       payload: { message: message.message.toString() },
@@ -127,7 +127,7 @@ export class WebviewProvider implements IDAppProviderBase {
     return message;
   }
 
-  async cancelAction() {
+  cancelAction = async () => {
     return this.sendPostMessage({
       type: CrossWindowProviderRequestEnums.cancelAction,
       payload: undefined,
@@ -160,12 +160,12 @@ export class WebviewProvider implements IDAppProviderBase {
     return await this.waitingForResponse(responseTypeMap[message.type]);
   };
 
-  private async waitingForResponse<T extends CrossWindowProviderResponseEnums>(
-      action: T
+  private  waitingForResponse = async <T extends CrossWindowProviderResponseEnums>(
+    action: T
   ): Promise<{
     type: T;
     payload: ReplyWithPostMessagePayloadType<T>;
-  }> {
+  }> => {
     return await new Promise((resolve) => {
       window.addEventListener(
           "message",
