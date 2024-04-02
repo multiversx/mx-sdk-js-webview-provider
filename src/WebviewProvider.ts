@@ -12,7 +12,6 @@ import {
   ReplyWithPostMessagePayloadType,
 } from "@multiversx/sdk-dapp-utils/out/types/crossWindowProviderTypes";
 import { responseTypeMap } from "@multiversx/sdk-dapp-utils/out/constants/crossWindowProviderConstants";
-import { providerNotInitializedError } from "@multiversx/sdk-dapp-utils/out/helpers/providerNotInitializedError";
 import { getTargetOrigin } from "./getTargetOrigin";
 import type { IDAppProviderBase } from "@multiversx/sdk-dapp-utils/out/models/dappProviderBase";
 
@@ -139,23 +138,7 @@ export class WebviewProvider implements IDAppProviderBase {
 
   isConnected = async () => true;
 
-  getAddress = providerNotInitializedError("getAddress");
-
-  private async waitingForResponse<T extends CrossWindowProviderResponseEnums>(
-    action: T
-  ): Promise<{
-    type: T;
-    payload: ReplyWithPostMessagePayloadType<T>;
-  }> {
-    return await new Promise((resolve) => {
-      window.addEventListener(
-        "message",
-        webviewProviderEventHandler(action, resolve)
-      );
-    });
-  }
-
-  private sendPostMessage = async <T extends CrossWindowProviderRequestEnums>(
+  sendPostMessage = async <T extends CrossWindowProviderRequestEnums>(
     message: PostMessageParamsType<T>
   ): Promise<PostMessageReturnType<T>> => {
     const safeWindow = typeof window !== "undefined" ? window : ({} as any);
@@ -176,4 +159,18 @@ export class WebviewProvider implements IDAppProviderBase {
 
     return await this.waitingForResponse(responseTypeMap[message.type]);
   };
+
+  private async waitingForResponse<T extends CrossWindowProviderResponseEnums>(
+      action: T
+  ): Promise<{
+    type: T;
+    payload: ReplyWithPostMessagePayloadType<T>;
+  }> {
+    return await new Promise((resolve) => {
+      window.addEventListener(
+          "message",
+          webviewProviderEventHandler(action, resolve)
+      );
+    });
+  }
 }
