@@ -136,7 +136,7 @@ export class WebviewProvider implements IDAppProviderBase {
 
   isInitialized = () => true;
 
-  isConnected = async () => true;
+  isConnected = async () => Promise.resolve(true);
 
   sendPostMessage = async <T extends CrossWindowProviderRequestEnums>(
     message: PostMessageParamsType<T>
