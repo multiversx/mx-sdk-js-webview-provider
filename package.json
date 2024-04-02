@@ -1,0 +1,23 @@
+{
+  "name": "@multiversx/sdk-webview-provider",
+  "version": "0.0.1",
+  "description": "SDK Webview Provider",
+  "main": "out/index.js",
+  "types": "out/index.d.js",
+  "files": [
+    "out/**/*"
+  ],
+  "scripts": {
+    "compile": "tsc -p tsconfig.json",
+    "pretest": "npm run compile",
+    "prepare": "npm run compile"
+  },
+  "author": "MultiversX",
+  "license": "GPL-3.0-or-later",
+  "devDependencies": {
+    "typescript": "4.1.2"
+  },
+  "peerDependencies": {
+    "@multiversx/sdk-core": ">= 12.1.0"
+  }
+}
