@@ -134,6 +134,13 @@ export class WebviewProvider implements IDAppProviderBase {
     });
   }
 
+  finalizeResetState = async () => {
+    return this.sendPostMessage({
+      type: CrossWindowProviderRequestEnums.finalizeResetStateRequest,
+      payload: undefined,
+    });
+  }
+
   isInitialized = () => true;
 
   isConnected = async () => Promise.resolve(true);
