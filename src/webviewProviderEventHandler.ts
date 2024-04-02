@@ -1,6 +1,6 @@
 import { getTargetOrigin } from "./getTargetOrigin";
 import { CrossWindowProviderResponseEnums } from "@multiversx/sdk-dapp-utils/out/enums/crossWindowProviderEnums";
-import { ReplyWithPostMessagePayloadType } from "@multiversx/sdk-dapp-utils/out/types/crossWindowProviderType";
+import { ReplyWithPostMessagePayloadType } from "@multiversx/sdk-dapp-utils/out/types/crossWindowProviderTypes";
 
 export const webviewProviderEventHandler =
   <T extends CrossWindowProviderResponseEnums>(

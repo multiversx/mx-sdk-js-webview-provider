@@ -15,9 +15,12 @@
   "author": "MultiversX",
   "license": "GPL-3.0-or-later",
   "devDependencies": {
-    "typescript": "4.1.2"
+    "@multiversx/sdk-core": ">= 12.1.0",
+    "@multiversx/sdk-dapp-utils": ">= 0.0.1",
+    "typescript": "5.4.3"
   },
   "peerDependencies": {
-    "@multiversx/sdk-core": ">= 12.1.0"
+    "@multiversx/sdk-core": ">= 12.1.0",
+    "@multiversx/sdk-dapp-utils": ">= 0.0.1"
   }
 }
