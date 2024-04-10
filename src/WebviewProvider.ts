@@ -15,15 +15,47 @@ import { responseTypeMap } from "@multiversx/sdk-dapp-utils/out/constants/crossW
 import { getTargetOrigin } from "./getTargetOrigin";
 import type { IDAppProviderBase } from "@multiversx/sdk-dapp-utils/out/models/dappProviderBase";
 
-export class WebviewProvider implements IDAppProviderBase {
-  private static instance: WebviewProvider;
+interface IWebviewProviderOptions {
+  resetStateCallback?: () => void;
+}
 
-  static getInstance() {
-    if (!WebviewProvider.instance) {
-      WebviewProvider.instance = new WebviewProvider();
+const safeWindow = typeof window !== 'undefined' ? window : ({} as any);
+
+export class WebviewProvider implements IDAppProviderBase {
+  private static _instance: WebviewProvider;
+
+  static getInstance(options?: IWebviewProviderOptions) {
+    if (!WebviewProvider._instance) {
+      WebviewProvider._instance = new WebviewProvider(options);
     }
-    return WebviewProvider.instance;
+    return WebviewProvider._instance;
   }
+
+  constructor(options?: IWebviewProviderOptions) {
+    if(options?.resetStateCallback) {
+      this.resetState(options.resetStateCallback);
+    }
+  }
+
+  private resetState = (resetStateCallback?: () => void) => {
+    safeWindow.addEventListener(
+        'message',
+        webviewProviderEventHandler(
+            CrossWindowProviderResponseEnums.resetStateResponse,
+            (data) => {
+              if (
+                  data.type === CrossWindowProviderResponseEnums.resetStateResponse
+              ) {
+                resetStateCallback?.();
+
+                setTimeout(() => {
+                  this.finalizeResetState();
+                }, 500);
+              }
+            }
+        )
+    );
+  };
 
   init = async () => {
     this.sendPostMessage({
@@ -148,8 +180,6 @@ export class WebviewProvider implements IDAppProviderBase {
   sendPostMessage = async <T extends CrossWindowProviderRequestEnums>(
     message: PostMessageParamsType<T>
   ): Promise<PostMessageReturnType<T>> => {
-    const safeWindow = typeof window !== "undefined" ? window : ({} as any);
-
     if (safeWindow.ReactNativeWebView) {
       safeWindow.ReactNativeWebView.postMessage(
         JSON.stringify(message),
@@ -174,7 +204,7 @@ export class WebviewProvider implements IDAppProviderBase {
     payload: ReplyWithPostMessagePayloadType<T>;
   }> => {
     return await new Promise((resolve) => {
-      window.addEventListener(
+      safeWindow.addEventListener(
           "message",
           webviewProviderEventHandler(action, resolve)
       );
