@@ -17,7 +17,8 @@
   "devDependencies": {
     "@multiversx/sdk-core": ">= 12.1.0",
     "@multiversx/sdk-dapp-utils": ">= 0.0.1",
-    "typescript": "5.4.3"
+    "prettier": "3.2.5",
+    "typescript": "5.4.5"
   },
   "peerDependencies": {
     "@multiversx/sdk-core": ">= 12.1.0",
