@@ -210,7 +210,7 @@ export class WebviewProvider implements IDAppProviderBase {
     payload: ReplyWithPostMessagePayloadType<T>;
   }> => {
     return await new Promise((resolve) => {
-      getSafeWindow().addEventListener(
+      getSafeWindow().addEventListener?.(
         'message',
         webviewProviderEventHandler(action, resolve)
       );
