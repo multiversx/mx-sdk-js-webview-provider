@@ -185,10 +185,7 @@ export class WebviewProvider implements IDAppProviderBase {
     const safeWindow = getSafeWindow();
 
     if (safeWindow.ReactNativeWebView) {
-      safeWindow.ReactNativeWebView.postMessage(
-        JSON.stringify(message),
-        getTargetOrigin()
-      );
+      safeWindow.ReactNativeWebView.postMessage(JSON.stringify(message));
     } else if (safeWindow.webkit) {
       safeWindow.webkit.messageHandlers.postMessage(
         JSON.stringify(message),
