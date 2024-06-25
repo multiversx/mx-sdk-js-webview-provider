@@ -129,3 +129,10 @@ npm run compile
 
 </html>
 ```
+
+# !!! Important !!!
+Using [WKWebView](https://developer.apple.com/documentation/webkit/wkwebview), you need to register an object to be the handler for a particular message: `jsHandler`. 
+
+Every message (action like `login`, `signMessage`, etc.) sent from the child webview is using the `jsHandler` object to send the message to the parent window. Eg. `window.webkit.messageHandlers.jsHandler.postMessage({ type: "LOGIN_REQUEST" });`
+
+It's developer's responsibility to handle the message in the parent window and call the appropriate method on the `webview` object.
