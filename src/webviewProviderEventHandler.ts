@@ -1,19 +1,19 @@
 import { getTargetOrigin } from './helpers/getTargetOrigin';
-import { CrossWindowProviderResponseEnums } from '@multiversx/sdk-dapp-utils/out/enums/crossWindowProviderEnums';
-import { ReplyWithPostMessagePayloadType } from '@multiversx/sdk-dapp-utils/out/types/crossWindowProviderTypes';
+import { WindowProviderResponseEnums } from '@multiversx/sdk-dapp-utils/out/enums/windowProviderEnums';
+import { ReplyWithPostMessagePayloadType } from '@multiversx/sdk-dapp-utils/out/types/windowProviderTypes';
 import { isMobileWebview } from './helpers/isMobileWebview';
 import { getSafeWindow } from './helpers/getSafeWindow';
 import { getSafeDocument } from './helpers/getSafeDocument';
 
 export type WebviewProviderEventDataType<
-  T extends CrossWindowProviderResponseEnums
+  T extends WindowProviderResponseEnums
 > = {
   type: T;
   payload: ReplyWithPostMessagePayloadType<T>;
 };
 
 export const webviewProviderEventHandler = <
-  T extends CrossWindowProviderResponseEnums
+  T extends WindowProviderResponseEnums
 >(
   action: T,
   resolve: (value: WebviewProviderEventDataType<T>) => void
@@ -40,8 +40,7 @@ export const webviewProviderEventHandler = <
     }
 
     const isCurrentAction =
-      action === type ||
-      type === CrossWindowProviderResponseEnums.cancelResponse;
+      action === type || type === WindowProviderResponseEnums.cancelResponse;
 
     if (!isCurrentAction) {
       return;
