@@ -2,16 +2,16 @@ import { SignableMessage } from '@multiversx/sdk-core/out/signableMessage';
 import { Transaction } from '@multiversx/sdk-core/out/transaction';
 import { webviewProviderEventHandler } from './webviewProviderEventHandler';
 import {
-  CrossWindowProviderRequestEnums,
-  CrossWindowProviderResponseEnums,
+  WindowProviderRequestEnums,
+  WindowProviderResponseEnums,
   SignMessageStatusEnum
-} from '@multiversx/sdk-dapp-utils/out/enums/crossWindowProviderEnums';
+} from '@multiversx/sdk-dapp-utils/out/enums';
 import {
   PostMessageParamsType,
   PostMessageReturnType,
   ReplyWithPostMessagePayloadType
-} from '@multiversx/sdk-dapp-utils/out/types/crossWindowProviderTypes';
-import { responseTypeMap } from '@multiversx/sdk-dapp-utils/out/constants/crossWindowProviderConstants';
+} from '@multiversx/sdk-dapp-utils/out/types';
+import { responseTypeMap } from '@multiversx/sdk-dapp-utils/out/constants/windowProviderConstants';
 import { getTargetOrigin } from './helpers/getTargetOrigin';
 import { getSafeWindow } from './helpers/getSafeWindow';
 import { getSafeDocument } from './helpers/getSafeDocument';
@@ -41,11 +41,9 @@ export class WebviewProvider implements IDAppProviderBase {
     getSafeWindow().addEventListener?.(
       'message',
       webviewProviderEventHandler(
-        CrossWindowProviderResponseEnums.resetStateResponse,
+        WindowProviderResponseEnums.resetStateResponse,
         (data) => {
-          if (
-            data.type === CrossWindowProviderResponseEnums.resetStateResponse
-          ) {
+          if (data.type === WindowProviderResponseEnums.resetStateResponse) {
             resetStateCallback?.();
 
             setTimeout(() => {
@@ -59,7 +57,7 @@ export class WebviewProvider implements IDAppProviderBase {
 
   init = async () => {
     this.sendPostMessage({
-      type: CrossWindowProviderRequestEnums.finalizeHandshakeRequest,
+      type: WindowProviderRequestEnums.finalizeHandshakeRequest,
       payload: undefined
     });
 
@@ -72,7 +70,7 @@ export class WebviewProvider implements IDAppProviderBase {
 
   logout = async () => {
     const response = await this.sendPostMessage({
-      type: CrossWindowProviderRequestEnums.logoutRequest,
+      type: WindowProviderRequestEnums.logoutRequest,
       payload: undefined
     });
 
@@ -81,7 +79,7 @@ export class WebviewProvider implements IDAppProviderBase {
 
   relogin = async () => {
     const response = await this.sendPostMessage({
-      type: CrossWindowProviderRequestEnums.loginRequest,
+      type: WindowProviderRequestEnums.loginRequest,
       payload: undefined
     });
 
@@ -105,7 +103,7 @@ export class WebviewProvider implements IDAppProviderBase {
     transactionsToSign: Transaction[]
   ): Promise<Transaction[] | null> => {
     const response = await this.sendPostMessage({
-      type: CrossWindowProviderRequestEnums.signTransactionsRequest,
+      type: WindowProviderRequestEnums.signTransactionsRequest,
       payload: transactionsToSign.map((tx) => tx.toPlainObject())
     });
 
@@ -116,7 +114,7 @@ export class WebviewProvider implements IDAppProviderBase {
       return null;
     }
 
-    if (response.type == CrossWindowProviderResponseEnums.cancelResponse) {
+    if (response.type == WindowProviderResponseEnums.cancelResponse) {
       console.warn('Cancelled the transactions signing action');
       this.cancelAction();
       return null;
@@ -134,7 +132,7 @@ export class WebviewProvider implements IDAppProviderBase {
     message: SignableMessage
   ): Promise<SignableMessage | null> => {
     const response = await this.sendPostMessage({
-      type: CrossWindowProviderRequestEnums.signMessageRequest,
+      type: WindowProviderRequestEnums.signMessageRequest,
       payload: { message: message.message.toString() }
     });
 
@@ -145,7 +143,7 @@ export class WebviewProvider implements IDAppProviderBase {
       return null;
     }
 
-    if (response.type == CrossWindowProviderResponseEnums.cancelResponse) {
+    if (response.type == WindowProviderResponseEnums.cancelResponse) {
       console.warn('Cancelled the message signing action');
       this.cancelAction();
       return null;
@@ -163,14 +161,14 @@ export class WebviewProvider implements IDAppProviderBase {
 
   cancelAction = async () => {
     return this.sendPostMessage({
-      type: CrossWindowProviderRequestEnums.cancelAction,
+      type: WindowProviderRequestEnums.cancelAction,
       payload: undefined
     });
   };
 
   finalizeResetState = async () => {
     return this.sendPostMessage({
-      type: CrossWindowProviderRequestEnums.finalizeResetStateRequest,
+      type: WindowProviderRequestEnums.finalizeResetStateRequest,
       payload: undefined
     });
   };
@@ -179,7 +177,7 @@ export class WebviewProvider implements IDAppProviderBase {
 
   isConnected = async () => Promise.resolve(true);
 
-  sendPostMessage = async <T extends CrossWindowProviderRequestEnums>(
+  sendPostMessage = async <T extends WindowProviderRequestEnums>(
     message: PostMessageParamsType<T>
   ): Promise<PostMessageReturnType<T>> => {
     const safeWindow = getSafeWindow();
@@ -198,9 +196,7 @@ export class WebviewProvider implements IDAppProviderBase {
     return await this.waitingForResponse(responseTypeMap[message.type]);
   };
 
-  private waitingForResponse = async <
-    T extends CrossWindowProviderResponseEnums
-  >(
+  private waitingForResponse = async <T extends WindowProviderResponseEnums>(
     action: T
   ): Promise<{
     type: T;
