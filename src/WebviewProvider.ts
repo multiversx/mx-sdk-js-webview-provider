@@ -65,7 +65,28 @@ export class WebviewProvider implements IDAppProviderBase {
   };
 
   login = async () => {
-    return true;
+    const response = await this.sendPostMessage({
+      type: WindowProviderRequestEnums.loginRequest,
+      payload: undefined
+    });
+
+    if (response.type == WindowProviderResponseEnums.cancelResponse) {
+      console.warn('Cancelled the login action');
+      await this.cancelAction();
+      return null;
+    }
+
+    if (response.payload.error) {
+      console.error('Error logging in', response.payload.error);
+      return null;
+    }
+
+    if (!response.payload.data) {
+      console.error('Error logging in', 'No data received');
+      return null;
+    }
+
+    return response.payload.data;
   };
 
   logout = async () => {
