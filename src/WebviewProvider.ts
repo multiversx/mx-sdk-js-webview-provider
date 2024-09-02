@@ -1,4 +1,3 @@
-import { SignableMessage } from '@multiversx/sdk-core/out/signableMessage';
 import { Transaction } from '@multiversx/sdk-core/out/transaction';
 import { webviewProviderEventHandler } from './webviewProviderEventHandler';
 import {
@@ -15,7 +14,11 @@ import { responseTypeMap } from '@multiversx/sdk-dapp-utils/out/constants/window
 import { getTargetOrigin } from './helpers/getTargetOrigin';
 import { getSafeWindow } from './helpers/getSafeWindow';
 import { getSafeDocument } from './helpers/getSafeDocument';
-import type { IDAppProviderBase } from '@multiversx/sdk-dapp-utils/out/models/dappProviderBase';
+import type {
+  IDAppProviderAccount,
+  IDAppProviderBase
+} from '@multiversx/sdk-dapp-utils/out/models/dappProviderBase';
+import { Message, MessageComputer } from '@multiversx/sdk-core';
 
 interface IWebviewProviderOptions {
   resetStateCallback?: () => void;
@@ -23,6 +26,11 @@ interface IWebviewProviderOptions {
 
 export class WebviewProvider implements IDAppProviderBase {
   private static _instance: WebviewProvider;
+  private initialized = false;
+  private account: IDAppProviderAccount = {
+    address: '',
+    signature: ''
+  };
 
   static getInstance(options?: IWebviewProviderOptions) {
     if (!WebviewProvider._instance) {
@@ -56,15 +64,20 @@ export class WebviewProvider implements IDAppProviderBase {
   };
 
   init = async () => {
-    this.sendPostMessage({
+    await this.sendPostMessage({
       type: WindowProviderRequestEnums.finalizeHandshakeRequest,
       payload: undefined
     });
 
-    return true;
+    this.initialized = true;
+    return this.initialized;
   };
 
   login = async () => {
+    if (!this.initialized) {
+      throw new Error('Provider not initialized');
+    }
+
     const response = await this.sendPostMessage({
       type: WindowProviderRequestEnums.loginRequest,
       payload: undefined
@@ -76,17 +89,16 @@ export class WebviewProvider implements IDAppProviderBase {
       return null;
     }
 
-    if (response.payload.error) {
-      console.error('Error logging in', response.payload.error);
-      return null;
-    }
-
     if (!response.payload.data) {
-      console.error('Error logging in', 'No data received');
+      console.error(
+        'Error logging in',
+        response.payload.error ?? 'No data received'
+      );
       return null;
     }
 
-    return response.payload.data;
+    this.account = response.payload.data;
+    return this.account;
   };
 
   logout = async () => {
@@ -94,6 +106,12 @@ export class WebviewProvider implements IDAppProviderBase {
       type: WindowProviderRequestEnums.logoutRequest,
       payload: undefined
     });
+
+    this.initialized = false;
+    this.account = {
+      address: '',
+      signature: ''
+    };
 
     return Boolean(response.payload.data);
   };
@@ -103,6 +121,20 @@ export class WebviewProvider implements IDAppProviderBase {
       type: WindowProviderRequestEnums.loginRequest,
       payload: undefined
     });
+
+    if (response.type == WindowProviderResponseEnums.cancelResponse) {
+      console.warn('Cancelled the re-login action');
+      await this.cancelAction();
+      return null;
+    }
+
+    if (!response.payload.data) {
+      console.error(
+        'Re-login Error',
+        response.payload.error ?? 'No data received'
+      );
+      return null;
+    }
 
     const { data, error } = response.payload;
 
@@ -117,6 +149,7 @@ export class WebviewProvider implements IDAppProviderBase {
       return null;
     }
 
+    this.account = data;
     return accessToken;
   };
 
@@ -149,12 +182,10 @@ export class WebviewProvider implements IDAppProviderBase {
     return response?.[0];
   };
 
-  signMessage = async (
-    message: SignableMessage
-  ): Promise<SignableMessage | null> => {
+  signMessage = async (messageToSign: string): Promise<Message | null> => {
     const response = await this.sendPostMessage({
       type: WindowProviderRequestEnums.signMessageRequest,
-      payload: { message: message.message.toString() }
+      payload: { message: messageToSign }
     });
 
     const { data, error } = response.payload;
@@ -175,7 +206,10 @@ export class WebviewProvider implements IDAppProviderBase {
       return null;
     }
 
-    message.applySignature(Buffer.from(String(data.signature), 'hex'));
+    const message = new Message({
+      data: Buffer.from(messageToSign)
+    });
+    message.signature = Buffer.from(String(data.signature), 'hex');
 
     return message;
   };
@@ -194,9 +228,17 @@ export class WebviewProvider implements IDAppProviderBase {
     });
   };
 
-  isInitialized = () => true;
+  isInitialized = () => {
+    return this.initialized;
+  };
 
-  isConnected = async () => Promise.resolve(true);
+  async isConnected(): Promise<boolean> {
+    return Boolean(this.account.address);
+  }
+
+  getAccount(): IDAppProviderAccount | null {
+    return this.account;
+  }
 
   sendPostMessage = async <T extends WindowProviderRequestEnums>(
     message: PostMessageParamsType<T>
