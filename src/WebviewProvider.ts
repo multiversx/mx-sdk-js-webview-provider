@@ -226,11 +226,11 @@ export class WebviewProvider implements IDAppProviderBase {
     });
   };
 
-  isInitialized = () => {
+  isInitialized = (): boolean => {
     return this.initialized;
   };
 
-  async isConnected(): Promise<boolean> {
+  isConnected(): boolean {
     return Boolean(this.account.address);
   }
 
