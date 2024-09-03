@@ -27,10 +27,7 @@ interface IWebviewProviderOptions {
 export class WebviewProvider implements IDAppProviderBase {
   private static _instance: WebviewProvider;
   private initialized = false;
-  private account: IDAppProviderAccount = {
-    address: '',
-    signature: ''
-  };
+  private account: IDAppProviderAccount = { address: '' };
 
   static getInstance(options?: IWebviewProviderOptions) {
     if (!WebviewProvider._instance) {
@@ -62,6 +59,10 @@ export class WebviewProvider implements IDAppProviderBase {
       )
     );
   };
+
+  private disconnect() {
+    this.account = { address: '' };
+  }
 
   init = async () => {
     await this.sendPostMessage({
@@ -108,10 +109,7 @@ export class WebviewProvider implements IDAppProviderBase {
     });
 
     this.initialized = false;
-    this.account = {
-      address: '',
-      signature: ''
-    };
+    this.disconnect();
 
     return Boolean(response.payload.data);
   };
