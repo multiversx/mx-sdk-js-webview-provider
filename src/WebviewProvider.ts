@@ -22,7 +22,6 @@ interface IWebviewProviderOptions {
 
 export interface IProviderAccount {
   address: string;
-  [key: string]: unknown;
 }
 
 export class WebviewProvider {
