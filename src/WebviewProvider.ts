@@ -227,9 +227,9 @@ export class WebviewProvider {
     });
   };
 
-  isInitialized = (): boolean => {
+  isInitialized(): boolean {
     return this.initialized;
-  };
+  }
 
   isConnected(): boolean {
     return Boolean(this.account.address);
