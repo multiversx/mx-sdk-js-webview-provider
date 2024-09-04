@@ -4,30 +4,31 @@ import {
   WindowProviderRequestEnums,
   WindowProviderResponseEnums,
   SignMessageStatusEnum
-} from '@multiversx/sdk-dapp-utils/out/enums';
+} from '@multiversx/sdk-web-wallet-cross-window-provider/out/enums';
 import {
   PostMessageParamsType,
   PostMessageReturnType,
   ReplyWithPostMessagePayloadType
-} from '@multiversx/sdk-dapp-utils/out/types';
-import { responseTypeMap } from '@multiversx/sdk-dapp-utils/out/constants/windowProviderConstants';
+} from '@multiversx/sdk-web-wallet-cross-window-provider/out/types';
+import { responseTypeMap } from '@multiversx/sdk-web-wallet-cross-window-provider/out/constants/windowProviderConstants';
 import { getTargetOrigin } from './helpers/getTargetOrigin';
 import { getSafeWindow } from './helpers/getSafeWindow';
 import { getSafeDocument } from './helpers/getSafeDocument';
-import type {
-  IDAppProviderAccount,
-  IDAppProviderBase
-} from '@multiversx/sdk-dapp-utils/out/models/dappProviderBase';
-import { Message, MessageComputer } from '@multiversx/sdk-core';
+import { Message } from '@multiversx/sdk-core';
 
 interface IWebviewProviderOptions {
   resetStateCallback?: () => void;
 }
 
-export class WebviewProvider implements IDAppProviderBase {
+export interface IProviderAccount {
+  address: string;
+  [key: string]: unknown;
+}
+
+export class WebviewProvider {
   private static _instance: WebviewProvider;
   private initialized = false;
-  private account: IDAppProviderAccount = { address: '' };
+  private account: IProviderAccount = { address: '' };
 
   static getInstance(options?: IWebviewProviderOptions) {
     if (!WebviewProvider._instance) {
@@ -234,8 +235,12 @@ export class WebviewProvider implements IDAppProviderBase {
     return Boolean(this.account.address);
   }
 
-  getAccount(): IDAppProviderAccount | null {
+  getAccount(): IProviderAccount | null {
     return this.account;
+  }
+
+  setAccount(account: IProviderAccount): void {
+    this.account = account;
   }
 
   sendPostMessage = async <T extends WindowProviderRequestEnums>(
