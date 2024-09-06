@@ -15,6 +15,7 @@ import { getTargetOrigin } from './helpers/getTargetOrigin';
 import { getSafeWindow } from './helpers/getSafeWindow';
 import { getSafeDocument } from './helpers/getSafeDocument';
 import { Message } from '@multiversx/sdk-core';
+import { Address } from '@multiversx/sdk-core/out';
 
 interface IWebviewProviderOptions {
   resetStateCallback?: () => void;
@@ -180,10 +181,10 @@ export class WebviewProvider {
     return response?.[0];
   };
 
-  signMessage = async (messageToSign: string): Promise<Message | null> => {
+  signMessage = async (messageToSign: Message): Promise<Message | null> => {
     const response = await this.sendPostMessage({
       type: WindowProviderRequestEnums.signMessageRequest,
-      payload: { message: messageToSign }
+      payload: { message: Buffer.from(messageToSign.data).toString() }
     });
 
     const { data, error } = response.payload;
@@ -204,12 +205,14 @@ export class WebviewProvider {
       return null;
     }
 
-    const message = new Message({
-      data: Buffer.from(messageToSign)
+    return new Message({
+      data: Buffer.from(messageToSign.data),
+      address:
+        messageToSign.address ?? Address.fromBech32(this.account.address),
+      signer: 'webview',
+      version: messageToSign.version,
+      signature: Buffer.from(String(data.signature), 'hex')
     });
-    message.signature = Buffer.from(String(data.signature), 'hex');
-
-    return message;
   };
 
   cancelAction = async () => {
