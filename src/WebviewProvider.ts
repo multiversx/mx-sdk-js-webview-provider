@@ -23,6 +23,7 @@ interface IWebviewProviderOptions {
 
 export interface IProviderAccount {
   address: string;
+  signature?: string;
 }
 
 export class WebviewProvider {
