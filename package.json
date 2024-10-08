@@ -1,6 +1,6 @@
 {
   "name": "@multiversx/sdk-webview-provider",
-  "version": "2.0.0-alpha.0",
+  "version": "2.0.0",
   "description": "SDK Webview Provider",
   "main": "out/index.js",
   "types": "out/index.d.js",
@@ -16,12 +16,12 @@
   "license": "GPL-3.0-or-later",
   "devDependencies": {
     "@multiversx/sdk-core": ">= 13.5.0",
-    "@multiversx/sdk-web-wallet-cross-window-provider": ">= 2.0.0-alpha.1",
+    "@multiversx/sdk-web-wallet-cross-window-provider": ">= 2.0.1",
     "prettier": "3.2.5",
     "typescript": "5.4.5"
   },
   "peerDependencies": {
     "@multiversx/sdk-core": ">= 13.5.0",
-    "@multiversx/sdk-web-wallet-cross-window-provider": ">= 2.0.0-alpha.1"
+    "@multiversx/sdk-web-wallet-cross-window-provider": ">= 2.0.1"
   }
 }
