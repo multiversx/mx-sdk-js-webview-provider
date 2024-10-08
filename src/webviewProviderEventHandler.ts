@@ -1,9 +1,9 @@
 import { getTargetOrigin } from './helpers/getTargetOrigin';
-import { WindowProviderResponseEnums } from '@multiversx/sdk-dapp-utils/out/enums/windowProviderEnums';
-import { ReplyWithPostMessagePayloadType } from '@multiversx/sdk-dapp-utils/out/types/windowProviderTypes';
 import { isMobileWebview } from './helpers/isMobileWebview';
 import { getSafeWindow } from './helpers/getSafeWindow';
 import { getSafeDocument } from './helpers/getSafeDocument';
+import { WindowProviderResponseEnums } from '@multiversx/sdk-web-wallet-cross-window-provider/out/enums/windowProviderEnums';
+import { ReplyWithPostMessagePayloadType } from '@multiversx/sdk-web-wallet-cross-window-provider/out/types/windowProviderTypes';
 
 export type WebviewProviderEventDataType<
   T extends WindowProviderResponseEnums

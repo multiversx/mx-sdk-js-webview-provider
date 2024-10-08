@@ -1,28 +1,35 @@
-import { SignableMessage } from '@multiversx/sdk-core/out/signableMessage';
 import { Transaction } from '@multiversx/sdk-core/out/transaction';
 import { webviewProviderEventHandler } from './webviewProviderEventHandler';
 import {
   WindowProviderRequestEnums,
   WindowProviderResponseEnums,
   SignMessageStatusEnum
-} from '@multiversx/sdk-dapp-utils/out/enums';
+} from '@multiversx/sdk-web-wallet-cross-window-provider/out/enums';
 import {
   PostMessageParamsType,
   PostMessageReturnType,
   ReplyWithPostMessagePayloadType
-} from '@multiversx/sdk-dapp-utils/out/types';
-import { responseTypeMap } from '@multiversx/sdk-dapp-utils/out/constants/windowProviderConstants';
+} from '@multiversx/sdk-web-wallet-cross-window-provider/out/types';
+import { responseTypeMap } from '@multiversx/sdk-web-wallet-cross-window-provider/out/constants/windowProviderConstants';
 import { getTargetOrigin } from './helpers/getTargetOrigin';
 import { getSafeWindow } from './helpers/getSafeWindow';
 import { getSafeDocument } from './helpers/getSafeDocument';
-import type { IDAppProviderBase } from '@multiversx/sdk-dapp-utils/out/models/dappProviderBase';
+import { Message } from '@multiversx/sdk-core';
+import { Address } from '@multiversx/sdk-core/out';
 
 interface IWebviewProviderOptions {
   resetStateCallback?: () => void;
 }
 
-export class WebviewProvider implements IDAppProviderBase {
+export interface IProviderAccount {
+  address: string;
+  signature?: string;
+}
+
+export class WebviewProvider {
   private static _instance: WebviewProvider;
+  private initialized = false;
+  private account: IProviderAccount = { address: '' };
 
   static getInstance(options?: IWebviewProviderOptions) {
     if (!WebviewProvider._instance) {
@@ -55,17 +62,46 @@ export class WebviewProvider implements IDAppProviderBase {
     );
   };
 
+  private disconnect() {
+    this.account = { address: '' };
+  }
+
   init = async () => {
-    this.sendPostMessage({
+    await this.sendPostMessage({
       type: WindowProviderRequestEnums.finalizeHandshakeRequest,
       payload: undefined
     });
 
-    return true;
+    this.initialized = true;
+    return this.initialized;
   };
 
   login = async () => {
-    return true;
+    if (!this.initialized) {
+      throw new Error('Provider not initialized');
+    }
+
+    const response = await this.sendPostMessage({
+      type: WindowProviderRequestEnums.loginRequest,
+      payload: undefined
+    });
+
+    if (response.type == WindowProviderResponseEnums.cancelResponse) {
+      console.warn('Cancelled the login action');
+      await this.cancelAction();
+      return null;
+    }
+
+    if (!response.payload.data) {
+      console.error(
+        'Error logging in',
+        response.payload.error ?? 'No data received'
+      );
+      return null;
+    }
+
+    this.account = response.payload.data;
+    return this.account;
   };
 
   logout = async () => {
@@ -73,6 +109,9 @@ export class WebviewProvider implements IDAppProviderBase {
       type: WindowProviderRequestEnums.logoutRequest,
       payload: undefined
     });
+
+    this.initialized = false;
+    this.disconnect();
 
     return Boolean(response.payload.data);
   };
@@ -82,6 +121,20 @@ export class WebviewProvider implements IDAppProviderBase {
       type: WindowProviderRequestEnums.loginRequest,
       payload: undefined
     });
+
+    if (response.type == WindowProviderResponseEnums.cancelResponse) {
+      console.warn('Cancelled the re-login action');
+      await this.cancelAction();
+      return null;
+    }
+
+    if (!response.payload.data) {
+      console.error(
+        'Re-login Error',
+        response.payload.error ?? 'No data received'
+      );
+      return null;
+    }
 
     const { data, error } = response.payload;
 
@@ -96,6 +149,7 @@ export class WebviewProvider implements IDAppProviderBase {
       return null;
     }
 
+    this.account = data;
     return accessToken;
   };
 
@@ -128,12 +182,10 @@ export class WebviewProvider implements IDAppProviderBase {
     return response?.[0];
   };
 
-  signMessage = async (
-    message: SignableMessage
-  ): Promise<SignableMessage | null> => {
+  signMessage = async (messageToSign: Message): Promise<Message | null> => {
     const response = await this.sendPostMessage({
       type: WindowProviderRequestEnums.signMessageRequest,
-      payload: { message: message.message.toString() }
+      payload: { message: Buffer.from(messageToSign.data).toString() }
     });
 
     const { data, error } = response.payload;
@@ -154,9 +206,14 @@ export class WebviewProvider implements IDAppProviderBase {
       return null;
     }
 
-    message.applySignature(Buffer.from(String(data.signature), 'hex'));
-
-    return message;
+    return new Message({
+      data: Buffer.from(messageToSign.data),
+      address:
+        messageToSign.address ?? Address.fromBech32(this.account.address),
+      signer: 'webview',
+      version: messageToSign.version,
+      signature: Buffer.from(String(data.signature), 'hex')
+    });
   };
 
   cancelAction = async () => {
@@ -173,9 +230,21 @@ export class WebviewProvider implements IDAppProviderBase {
     });
   };
 
-  isInitialized = () => true;
+  isInitialized(): boolean {
+    return this.initialized;
+  }
 
-  isConnected = async () => Promise.resolve(true);
+  isConnected(): boolean {
+    return Boolean(this.account.address);
+  }
+
+  getAccount(): IProviderAccount | null {
+    return this.account;
+  }
+
+  setAccount(account: IProviderAccount): void {
+    this.account = account;
+  }
 
   sendPostMessage = async <T extends WindowProviderRequestEnums>(
     message: PostMessageParamsType<T>
