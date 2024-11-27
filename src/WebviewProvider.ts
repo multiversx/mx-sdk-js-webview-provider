@@ -24,6 +24,7 @@ interface IWebviewProviderOptions {
 export interface IProviderAccount {
   address: string;
   signature?: string;
+  accessToken?: string;
 }
 
 export class WebviewProvider {
@@ -118,7 +119,7 @@ export class WebviewProvider {
 
   relogin = async () => {
     const response = await this.sendPostMessage({
-      type: WindowProviderRequestEnums.loginRequest,
+      type: WindowProviderRequestEnums.reloginRequest,
       payload: undefined
     });
 
@@ -149,7 +150,7 @@ export class WebviewProvider {
       return null;
     }
 
-    this.account = data;
+    this.account.accessToken = accessToken;
     return accessToken;
   };
 
