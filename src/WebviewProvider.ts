@@ -69,6 +69,12 @@ export class WebviewProvider {
 
   init = async () => {
     this.initialized = true;
+
+    this.sendPostMessage({
+      type: WindowProviderRequestEnums.finalizeHandshakeRequest,
+      payload: undefined
+    });
+
     return this.initialized;
   };
 
