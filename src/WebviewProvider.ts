@@ -43,6 +43,12 @@ export class WebviewProvider {
     if (options?.resetStateCallback) {
       this.resetState(options.resetStateCallback);
     }
+
+    window.addEventListener('message', (event) => {
+      if (event.origin === 'https://localhost:3002') {
+        console.log('event', event);
+      }
+    });
   }
 
   private resetState = (resetStateCallback?: () => void) => {
@@ -79,14 +85,24 @@ export class WebviewProvider {
   };
 
   login = async () => {
+    window.addEventListener('message', (event) => {
+      if (event.origin === 'https://localhost:3002') {
+        console.log('event', event);
+      }
+    });
+
     if (!this.initialized) {
       throw new Error('Provider not initialized');
     }
+
+    console.log('login', 'before sendPostMessage');
 
     const response = await this.sendPostMessage({
       type: WindowProviderRequestEnums.loginRequest,
       payload: undefined
     });
+
+    console.log('login response', response);
 
     if (response.type == WindowProviderResponseEnums.cancelResponse) {
       console.warn('Cancelled the login action');
