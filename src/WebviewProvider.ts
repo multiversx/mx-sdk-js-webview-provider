@@ -1,18 +1,18 @@
-import { Message, Address, Transaction } from '@multiversx/sdk-core';
+import { Address, Message, Transaction } from '@multiversx/sdk-core';
+import { responseTypeMap } from '@multiversx/sdk-web-wallet-cross-window-provider/out/constants/windowProviderConstants';
 import {
+  SignMessageStatusEnum,
   WindowProviderRequestEnums,
-  WindowProviderResponseEnums,
-  SignMessageStatusEnum
+  WindowProviderResponseEnums
 } from '@multiversx/sdk-web-wallet-cross-window-provider/out/enums';
 import {
   PostMessageParamsType,
   PostMessageReturnType,
   ReplyWithPostMessagePayloadType
 } from '@multiversx/sdk-web-wallet-cross-window-provider/out/types';
-import { responseTypeMap } from '@multiversx/sdk-web-wallet-cross-window-provider/out/constants/windowProviderConstants';
-import { getTargetOrigin } from './helpers/getTargetOrigin';
-import { getSafeWindow } from './helpers/getSafeWindow';
 import { getSafeDocument } from './helpers/getSafeDocument';
+import { getSafeWindow } from './helpers/getSafeWindow';
+import { getTargetOrigin } from './helpers/getTargetOrigin';
 import { webviewProviderEventHandler } from './webviewProviderEventHandler';
 
 interface IWebviewProviderOptions {
