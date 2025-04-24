@@ -1,5 +1,4 @@
-import { Transaction } from '@multiversx/sdk-core/out/transaction';
-import { webviewProviderEventHandler } from './webviewProviderEventHandler';
+import { Message, Address, Transaction } from '@multiversx/sdk-core';
 import {
   WindowProviderRequestEnums,
   WindowProviderResponseEnums,
@@ -14,8 +13,7 @@ import { responseTypeMap } from '@multiversx/sdk-web-wallet-cross-window-provide
 import { getTargetOrigin } from './helpers/getTargetOrigin';
 import { getSafeWindow } from './helpers/getSafeWindow';
 import { getSafeDocument } from './helpers/getSafeDocument';
-import { Message } from '@multiversx/sdk-core';
-import { Address } from '@multiversx/sdk-core/out';
+import { webviewProviderEventHandler } from './webviewProviderEventHandler';
 
 interface IWebviewProviderOptions {
   resetStateCallback?: () => void;
