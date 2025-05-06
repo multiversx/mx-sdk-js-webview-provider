@@ -25,6 +25,8 @@ export interface IProviderAccount {
   accessToken?: string;
 }
 
+const HANDSHAKE_RESPONSE_TIMEOUT = 1000;
+
 export class WebviewProvider {
   private static _instance: WebviewProvider;
   private initialized = false;
@@ -65,13 +67,65 @@ export class WebviewProvider {
     this.account = { address: '' };
   }
 
-  init = async () => {
+  /**
+   * Initiates a handshake request with a window provider and waits for a response.
+   *
+   * This function sends a `finalizeHandshakeRequest` message and races it against a timeout.
+   * If the handshake does not complete within the specified `HANDSHAKE_RESPONSE_TIMEOUT`,
+   * the promise is rejected with a timeout error.
+   */
+  private initiateHandshake = async (): Promise<
+    PostMessageReturnType<WindowProviderRequestEnums.finalizeHandshakeRequest>
+  > => {
+    let timeoutId: ReturnType<typeof setTimeout>;
+
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timeoutId = setTimeout(() => {
+        reject(new Error('Timeout: Handshake took too long'));
+      }, HANDSHAKE_RESPONSE_TIMEOUT);
+    });
+
+    const handshakePromise = this.sendPostMessage({
+      type: WindowProviderRequestEnums.finalizeHandshakeRequest,
+      payload: undefined
+    });
+
+    return Promise.race([handshakePromise, timeoutPromise]).finally(() => {
+      clearTimeout(timeoutId);
+    });
+  };
+
+  private initiateReactNativeHandshake() {
     this.initialized = true;
 
     this.sendPostMessage({
       type: WindowProviderRequestEnums.finalizeHandshakeRequest,
       payload: undefined
     });
+
+    return this.initialized;
+  }
+
+  init = async () => {
+    const safeWindow = getSafeWindow();
+
+    // Backwards compatible for ReactNative
+    if (safeWindow.ReactNativeWebView) {
+      return this.initiateReactNativeHandshake();
+    }
+
+    try {
+      const { type, payload } = await this.initiateHandshake();
+
+      if (
+        type === WindowProviderResponseEnums.finalizeHandshakeResponse &&
+        payload.data
+      ) {
+        this.initialized = true;
+      }
+    } catch {
+      // No handshake response received
+    }
 
     return this.initialized;
   };
