@@ -1,6 +1,6 @@
 {
   "name": "@multiversx/sdk-webview-provider",
-  "version": "3.0.2",
+  "version": "3.0.1",
   "description": "SDK Webview Provider",
   "main": "out/index.js",
   "types": "out/index.d.js",
@@ -17,6 +17,7 @@
   "devDependencies": {
     "@multiversx/sdk-core": "^14.x",
     "@multiversx/sdk-web-wallet-cross-window-provider": "^3.x",
+    "@types/node": "22.15.12",
     "prettier": "3.2.5",
     "typescript": "5.4.5"
   },
