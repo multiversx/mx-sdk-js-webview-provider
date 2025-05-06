@@ -77,7 +77,6 @@ export class WebviewProvider {
   private initiateHandshake = async (): Promise<
     PostMessageReturnType<WindowProviderRequestEnums.finalizeHandshakeRequest>
   > => {
-    console.log('kekw handshake');
     const timeoutPromise = new Promise<never>((_, reject) =>
       setTimeout(
         () => reject(new Error('Timeout: Handshake took too long')),
