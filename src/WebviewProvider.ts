@@ -70,33 +70,27 @@ export class WebviewProvider {
   /**
    * Initiates a handshake request with a window provider and waits for a response.
    *
-   * This method sends a `finalizeHandshakeRequest` message via `sendPostMessage`
-   * and awaits the response, with a timeout of 1000 milliseconds. If no response
-   * is received within the timeout period, the promise is rejected with a timeout error.
+   * This function sends a `finalizeHandshakeRequest` message and races it against a timeout.
+   * If the handshake does not complete within the specified `HANDSHAKE_RESPONSE_TIMEOUT`,
+   * the promise is rejected with a timeout error.
    */
   private initiateHandshake = async (): Promise<
     PostMessageReturnType<WindowProviderRequestEnums.finalizeHandshakeRequest>
   > => {
-    const controller = new AbortController();
+    console.log('kekw handshake');
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(
+        () => reject(new Error('Timeout: Handshake took too long')),
+        HANDSHAKE_RESPONSE_TIMEOUT
+      )
+    );
 
-    return new Promise(async (resolve, reject) => {
-      const timeoutId = setTimeout(() => {
-        controller.abort();
-        reject(new Error('Timeout: Handshake took too long'));
-      }, HANDSHAKE_RESPONSE_TIMEOUT);
-
-      try {
-        const response = await this.sendPostMessage({
-          type: WindowProviderRequestEnums.finalizeHandshakeRequest,
-          payload: undefined
-        });
-        resolve(response);
-      } catch (err) {
-        reject(err);
-      } finally {
-        clearTimeout(timeoutId);
-      }
+    const handshakePromise = this.sendPostMessage({
+      type: WindowProviderRequestEnums.finalizeHandshakeRequest,
+      payload: undefined
     });
+
+    return Promise.race([handshakePromise, timeoutPromise]);
   };
 
   private initiateReactNativeHandshake() {
