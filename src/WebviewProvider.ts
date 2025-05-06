@@ -25,6 +25,8 @@ export interface IProviderAccount {
   accessToken?: string;
 }
 
+const HANDSHAKE_RESPONSE_TIMEOUT = 1000;
+
 export class WebviewProvider {
   private static _instance: WebviewProvider;
   private initialized = false;
@@ -65,13 +67,69 @@ export class WebviewProvider {
     this.account = { address: '' };
   }
 
-  init = async () => {
+  /**
+   * Initiates a handshake request with a window provider and waits for a response.
+   *
+   * This method sends a `finalizeHandshakeRequest` message via `sendPostMessage`
+   * and awaits the response, with a timeout of 1000 milliseconds. If no response
+   * is received within the timeout period, the promise is rejected with a timeout error.
+   */
+  private initiateHandshake = async (): Promise<
+    PostMessageReturnType<WindowProviderRequestEnums.finalizeHandshakeRequest>
+  > => {
+    const controller = new AbortController();
+
+    return new Promise(async (resolve, reject) => {
+      const timeoutId = setTimeout(() => {
+        controller.abort();
+        reject(new Error('Timeout: Handshake took too long'));
+      }, HANDSHAKE_RESPONSE_TIMEOUT);
+
+      try {
+        const response = await this.sendPostMessage({
+          type: WindowProviderRequestEnums.finalizeHandshakeRequest,
+          payload: undefined
+        });
+        resolve(response);
+      } catch (err) {
+        reject(err);
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    });
+  };
+
+  private initiateReactNativeHandshake() {
     this.initialized = true;
 
     this.sendPostMessage({
       type: WindowProviderRequestEnums.finalizeHandshakeRequest,
       payload: undefined
     });
+
+    return this.initialized;
+  }
+
+  init = async () => {
+    const safeWindow = getSafeWindow();
+
+    // Backwards compatible for ReactNative
+    if (safeWindow.ReactNativeWebView) {
+      return this.initiateReactNativeHandshake();
+    }
+
+    try {
+      const { type, payload } = await this.initiateHandshake();
+
+      if (
+        type === WindowProviderResponseEnums.finalizeHandshakeResponse &&
+        payload.data
+      ) {
+        this.initialized = true;
+      }
+    } catch {
+      // No handshake response received
+    }
 
     return this.initialized;
   };
