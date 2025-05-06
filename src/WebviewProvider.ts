@@ -77,19 +77,22 @@ export class WebviewProvider {
   private initiateHandshake = async (): Promise<
     PostMessageReturnType<WindowProviderRequestEnums.finalizeHandshakeRequest>
   > => {
-    const timeoutPromise = new Promise<never>((_, reject) =>
-      setTimeout(
-        () => reject(new Error('Timeout: Handshake took too long')),
-        HANDSHAKE_RESPONSE_TIMEOUT
-      )
-    );
+    let timeoutId: ReturnType<typeof setTimeout>;
+
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timeoutId = setTimeout(() => {
+        reject(new Error('Timeout: Handshake took too long'));
+      }, HANDSHAKE_RESPONSE_TIMEOUT);
+    });
 
     const handshakePromise = this.sendPostMessage({
       type: WindowProviderRequestEnums.finalizeHandshakeRequest,
       payload: undefined
     });
 
-    return Promise.race([handshakePromise, timeoutPromise]);
+    return Promise.race([handshakePromise, timeoutPromise]).finally(() => {
+      clearTimeout(timeoutId);
+    });
   };
 
   private initiateReactNativeHandshake() {
