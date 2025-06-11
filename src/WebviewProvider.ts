@@ -74,10 +74,12 @@ export class WebviewProvider {
    * If the handshake does not complete within the specified `HANDSHAKE_RESPONSE_TIMEOUT`,
    * the promise is rejected with a timeout error.
    */
-  private initiateHandshake = async (): Promise<
+  private initiateHandshake = async (
+    version?: string
+  ): Promise<
     PostMessageReturnType<WindowProviderRequestEnums.finalizeHandshakeRequest>
   > => {
-    let timeoutId: ReturnType<typeof setTimeout>;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
     const timeoutPromise = new Promise<never>((_, reject) => {
       timeoutId = setTimeout(() => {
@@ -87,12 +89,20 @@ export class WebviewProvider {
 
     const handshakePromise = this.sendPostMessage({
       type: WindowProviderRequestEnums.finalizeHandshakeRequest,
-      payload: undefined
+      payload: version
     });
 
-    return Promise.race([handshakePromise, timeoutPromise]).finally(() => {
-      clearTimeout(timeoutId);
-    });
+    try {
+      const result = await Promise.race([handshakePromise, timeoutPromise]);
+      return result;
+    } catch (error) {
+      console.error('Error initiating handshake', error);
+      throw error;
+    } finally {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    }
   };
 
   private initiateReactNativeHandshake() {
@@ -106,7 +116,7 @@ export class WebviewProvider {
     return this.initialized;
   }
 
-  init = async () => {
+  init = async (version?: string) => {
     const safeWindow = getSafeWindow();
 
     // Backwards compatible for ReactNative
@@ -115,7 +125,7 @@ export class WebviewProvider {
     }
 
     try {
-      const { type, payload } = await this.initiateHandshake();
+      const { type, payload } = await this.initiateHandshake(version);
 
       if (
         type === WindowProviderResponseEnums.finalizeHandshakeResponse &&
@@ -130,14 +140,14 @@ export class WebviewProvider {
     return this.initialized;
   };
 
-  login = async () => {
+  login = async (options?: { token?: string }) => {
     if (!this.initialized) {
       throw new Error('Provider not initialized');
     }
 
     const response = await this.sendPostMessage({
       type: WindowProviderRequestEnums.loginRequest,
-      payload: undefined
+      payload: options?.token ? { token: options.token } : undefined
     });
 
     if (response.type == WindowProviderResponseEnums.cancelResponse) {
