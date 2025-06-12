@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- ## [[3.1.0](https://github.com/multiversx/mx-sdk-js-webview-provider/pull/26)] - 2025-06-12
+
 - [Added token to login](https://github.com/multiversx/mx-sdk-js-webview-provider/pull/25)
 
 - ## [[3.0.1](https://github.com/multiversx/mx-sdk-js-webview-provider/pull/24)] - 2025-05-06
