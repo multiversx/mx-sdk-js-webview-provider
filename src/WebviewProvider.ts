@@ -31,6 +31,7 @@ export class WebviewProvider {
   private static _instance: WebviewProvider;
   private initialized = false;
   private account: IProviderAccount = { address: '' };
+  private handshakeResponseTimeout: number = HANDSHAKE_RESPONSE_TIMEOUT;
 
   static getInstance(options?: IWebviewProviderOptions) {
     if (!WebviewProvider._instance) {
@@ -83,8 +84,12 @@ export class WebviewProvider {
 
     const timeoutPromise = new Promise<never>((_, reject) => {
       timeoutId = setTimeout(() => {
-        reject(new Error('Timeout: Handshake took too long'));
-      }, HANDSHAKE_RESPONSE_TIMEOUT);
+        reject(
+          new Error(
+            `Timeout: Handshake took more than ${this.handshakeResponseTimeout}ms`
+          )
+        );
+      }, this.handshakeResponseTimeout);
     });
 
     const handshakePromise = this.sendPostMessage({
@@ -293,6 +298,10 @@ export class WebviewProvider {
       payload: undefined
     });
   };
+
+  setHandshakeResponseTimeout(timeout: number) {
+    this.handshakeResponseTimeout = timeout;
+  }
 
   isInitialized(): boolean {
     return this.initialized;
