@@ -1,7 +1,4 @@
-import { getTargetOrigin } from './helpers/getTargetOrigin';
 import { isMobileWebview } from './helpers/isMobileWebview';
-import { getSafeWindow } from './helpers/getSafeWindow';
-import { getSafeDocument } from './helpers/getSafeDocument';
 import { WindowProviderResponseEnums } from '@multiversx/sdk-web-wallet-cross-window-provider/out/enums/windowProviderEnums';
 import { ReplyWithPostMessagePayloadType } from '@multiversx/sdk-web-wallet-cross-window-provider/out/types/windowProviderTypes';
 
@@ -16,7 +13,8 @@ export const webviewProviderEventHandler = <
   T extends WindowProviderResponseEnums
 >(
   action: T,
-  resolve: (value: WebviewProviderEventDataType<T>) => void
+  resolve: (value: WebviewProviderEventDataType<T>) => void,
+  allowedOrigin: string
 ) => {
   return (event: MessageEvent<WebviewProviderEventDataType<T> | string>) => {
     let eventData = event.data;
@@ -35,7 +33,7 @@ export const webviewProviderEventHandler = <
       payload: ReplyWithPostMessagePayloadType<T>;
     };
 
-    if (!isMobileWebview() && event.origin != getTargetOrigin()) {
+    if (!isMobileWebview() && event.origin !== allowedOrigin) {
       return;
     }
 
@@ -45,15 +43,6 @@ export const webviewProviderEventHandler = <
     if (!isCurrentAction) {
       return;
     }
-
-    getSafeWindow().removeEventListener?.(
-      'message',
-      webviewProviderEventHandler(action, resolve)
-    );
-    getSafeDocument().removeEventListener?.(
-      'message',
-      webviewProviderEventHandler(action, resolve)
-    );
 
     resolve({ type, payload });
   };
