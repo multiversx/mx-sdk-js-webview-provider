@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- ## [[3.1.3](https://github.com/multiversx/mx-sdk-js-webview-provider/pull/30)] - 2025-07-21
+- [Removed `webview` check in `isMobileWebview()`](https://github.com/multiversx/mx-sdk-js-webview-provider/pull/30)
+
 - ## [[3.1.2](https://github.com/multiversx/mx-sdk-js-webview-provider/pull/29)] - 2025-07-04
 - [Update allowedOrigin to be taken from event](https://github.com/multiversx/mx-sdk-js-webview-provider/pull/28)
 
