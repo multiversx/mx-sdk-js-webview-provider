@@ -12,7 +12,6 @@ import {
 } from '@multiversx/sdk-web-wallet-cross-window-provider/out/types';
 import { getSafeDocument } from './helpers/getSafeDocument';
 import { getSafeWindow } from './helpers/getSafeWindow';
-import { getTargetOrigin } from './helpers/getTargetOrigin';
 import { webviewProviderEventHandler } from './webviewProviderEventHandler';
 
 interface IWebviewProviderOptions {
@@ -25,10 +24,14 @@ export interface IProviderAccount {
   accessToken?: string;
 }
 
+const HANDSHAKE_RESPONSE_TIMEOUT = 1000;
+
 export class WebviewProvider {
   private static _instance: WebviewProvider;
   private initialized = false;
   private account: IProviderAccount = { address: '' };
+  private handshakeResponseTimeout: number = HANDSHAKE_RESPONSE_TIMEOUT;
+  private allowedOrigin = '*';
 
   static getInstance(options?: IWebviewProviderOptions) {
     if (!WebviewProvider._instance) {
@@ -56,7 +59,8 @@ export class WebviewProvider {
               this.finalizeResetState();
             }, 500);
           }
-        }
+        },
+        this.allowedOrigin
       )
     );
   };
@@ -65,7 +69,53 @@ export class WebviewProvider {
     this.account = { address: '' };
   }
 
-  init = async () => {
+  /**
+   * Initiates a handshake request with a window provider and waits for a response.
+   *
+   * This function sends a `finalizeHandshakeRequest` message and races it against a timeout.
+   * If the handshake does not complete within the specified `HANDSHAKE_RESPONSE_TIMEOUT`,
+   * the promise is rejected with a timeout error.
+   */
+  private initiateHandshake = async (
+    version?: string
+  ): Promise<
+    PostMessageReturnType<WindowProviderRequestEnums.finalizeHandshakeRequest>
+  > => {
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+    const handshakePromise = new Promise<any>((resolve, reject) => {
+      const handler = (event: MessageEvent) => {
+        if (
+          event.data?.type ===
+          WindowProviderResponseEnums.finalizeHandshakeResponse
+        ) {
+          this.allowedOrigin = event.origin;
+          getSafeWindow().removeEventListener('message', handler);
+          resolve(event.data);
+        }
+      };
+
+      getSafeWindow().addEventListener('message', handler);
+
+      this.sendPostMessage({
+        type: WindowProviderRequestEnums.finalizeHandshakeRequest,
+        payload: version
+      });
+
+      timeoutId = setTimeout(() => {
+        getSafeWindow().removeEventListener('message', handler);
+        reject(
+          new Error(
+            `Timeout: Handshake took more than ${this.handshakeResponseTimeout}ms`
+          )
+        );
+      }, this.handshakeResponseTimeout);
+    });
+
+    return await handshakePromise;
+  };
+
+  private initiateReactNativeHandshake() {
     this.initialized = true;
 
     this.sendPostMessage({
@@ -74,16 +124,40 @@ export class WebviewProvider {
     });
 
     return this.initialized;
+  }
+
+  init = async (version?: string) => {
+    const safeWindow = getSafeWindow();
+
+    // Backwards compatible for ReactNative
+    if (safeWindow.ReactNativeWebView) {
+      return this.initiateReactNativeHandshake();
+    }
+
+    try {
+      const { type, payload } = await this.initiateHandshake(version);
+
+      if (
+        type === WindowProviderResponseEnums.finalizeHandshakeResponse &&
+        payload.data
+      ) {
+        this.initialized = true;
+      }
+    } catch {
+      // No handshake response received
+    }
+
+    return this.initialized;
   };
 
-  login = async () => {
+  login = async (options?: { token?: string }) => {
     if (!this.initialized) {
       throw new Error('Provider not initialized');
     }
 
     const response = await this.sendPostMessage({
       type: WindowProviderRequestEnums.loginRequest,
-      payload: undefined
+      payload: options?.token ? { token: options.token } : undefined
     });
 
     if (response.type == WindowProviderResponseEnums.cancelResponse) {
@@ -230,6 +304,10 @@ export class WebviewProvider {
     });
   };
 
+  setHandshakeResponseTimeout(timeout: number) {
+    this.handshakeResponseTimeout = timeout;
+  }
+
   isInitialized(): boolean {
     return this.initialized;
   }
@@ -256,10 +334,10 @@ export class WebviewProvider {
     } else if (safeWindow.webkit) {
       safeWindow.webkit.messageHandlers?.jsHandler?.postMessage(
         JSON.stringify(message),
-        getTargetOrigin()
+        this.allowedOrigin
       );
     } else if (safeWindow.parent) {
-      safeWindow.parent.postMessage(message, getTargetOrigin());
+      safeWindow.parent.postMessage(message, this.allowedOrigin);
     }
 
     return await this.waitingForResponse(responseTypeMap[message.type]);
@@ -272,14 +350,18 @@ export class WebviewProvider {
     payload: ReplyWithPostMessagePayloadType<T>;
   }> => {
     return await new Promise((resolve) => {
-      getSafeWindow().addEventListener?.(
-        'message',
-        webviewProviderEventHandler(action, resolve)
+      const handler = webviewProviderEventHandler(
+        action,
+        (data) => {
+          resolve(data);
+          getSafeWindow().removeEventListener('message', handler);
+          getSafeDocument().removeEventListener('message', handler);
+        },
+        this.allowedOrigin
       );
-      getSafeDocument().addEventListener?.(
-        'message',
-        webviewProviderEventHandler(action, resolve)
-      );
+
+      getSafeWindow().addEventListener('message', handler);
+      getSafeDocument().addEventListener('message', handler);
     });
   };
 }
