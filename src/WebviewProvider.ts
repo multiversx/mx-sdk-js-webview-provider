@@ -248,7 +248,7 @@ export class WebviewProvider {
       return null;
     }
 
-    return signedTransactions.map((tx) => Transaction.fromPlainObject(tx));
+    return signedTransactions.map((tx) => Transaction.newFromPlainObject(tx));
   };
 
   signTransaction = async (transaction: Transaction) => {
@@ -283,7 +283,7 @@ export class WebviewProvider {
     return new Message({
       data: Buffer.from(messageToSign.data),
       address:
-        messageToSign.address ?? Address.fromBech32(this.account.address),
+        messageToSign.address ?? Address.newFromBech32(this.account.address),
       signer: 'webview',
       version: messageToSign.version,
       signature: Buffer.from(String(data.signature), 'hex')
