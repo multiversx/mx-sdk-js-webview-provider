@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- ## [[3.2.1](https://github.com/multiversx/mx-sdk-js-webview-provider/pull/32)] - 2025-08-08
+
 - ## [[3.2.0](https://github.com/multiversx/mx-sdk-js-webview-provider/pull/31)] - 2025-08-04
 
 - ## [[3.1.3](https://github.com/multiversx/mx-sdk-js-webview-provider/pull/30)] - 2025-07-21
