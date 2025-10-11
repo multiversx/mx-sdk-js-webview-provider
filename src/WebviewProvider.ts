@@ -329,15 +329,15 @@ export class WebviewProvider {
   ): Promise<PostMessageReturnType<T>> => {
     const safeWindow = getSafeWindow();
 
-    if (safeWindow.ReactNativeWebView) {
+    if (safeWindow.parent) {
+      safeWindow.parent.postMessage(message, this.allowedOrigin);
+    } else if (safeWindow.ReactNativeWebView) {
       safeWindow.ReactNativeWebView.postMessage(JSON.stringify(message));
     } else if (safeWindow.webkit) {
       safeWindow.webkit.messageHandlers?.jsHandler?.postMessage(
         JSON.stringify(message),
         this.allowedOrigin
       );
-    } else if (safeWindow.parent) {
-      safeWindow.parent.postMessage(message, this.allowedOrigin);
     }
 
     return await this.waitingForResponse(responseTypeMap[message.type]);
