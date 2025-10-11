@@ -329,7 +329,8 @@ export class WebviewProvider {
   ): Promise<PostMessageReturnType<T>> => {
     const safeWindow = getSafeWindow();
 
-    if (safeWindow.parent) {
+    const isInIframe = safeWindow.self !== safeWindow.top;
+    if (safeWindow.parent && isInIframe) {
       safeWindow.parent.postMessage(message, this.allowedOrigin);
     } else if (safeWindow.ReactNativeWebView) {
       safeWindow.ReactNativeWebView.postMessage(JSON.stringify(message));
