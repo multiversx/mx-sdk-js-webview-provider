@@ -162,7 +162,7 @@ export class WebviewProvider {
 
     if (response.type == WindowProviderResponseEnums.cancelResponse) {
       console.warn('Cancelled the login action');
-      await this.cancelAction();
+      this.cancelAction();
       return null;
     }
 
@@ -198,7 +198,7 @@ export class WebviewProvider {
 
     if (response.type == WindowProviderResponseEnums.cancelResponse) {
       console.warn('Cancelled the re-login action');
-      await this.cancelAction();
+      this.cancelAction();
       return null;
     }
 
