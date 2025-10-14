@@ -115,28 +115,12 @@ export class WebviewProvider {
     return await handshakePromise;
   };
 
-  private initiateReactNativeHandshake() {
-    this.initialized = true;
-
-    this.sendPostMessage({
-      type: WindowProviderRequestEnums.finalizeHandshakeRequest,
-      payload: undefined
-    });
-
-    return this.initialized;
-  }
-
   init = async (version?: string) => {
-    const safeWindow = getSafeWindow();
-
-    // Backwards compatible for ReactNative
-    if (safeWindow.ReactNativeWebView) {
-      return this.initiateReactNativeHandshake();
-    }
-
+    console.log('STARTING HANDSHAKE');
     try {
       const { type, payload } = await this.initiateHandshake(version);
 
+      console.log({ type, payload });
       if (
         type === WindowProviderResponseEnums.finalizeHandshakeResponse &&
         payload.data
@@ -144,9 +128,11 @@ export class WebviewProvider {
         this.initialized = true;
       }
     } catch {
+      console.log('NO RESPONSE RECEIVED');
       // No handshake response received
     }
 
+    console.log('INITIALIZED =>>>>', this, this.initialized);
     return this.initialized;
   };
 
@@ -162,7 +148,7 @@ export class WebviewProvider {
 
     if (response.type == WindowProviderResponseEnums.cancelResponse) {
       console.warn('Cancelled the login action');
-      await this.cancelAction();
+      this.cancelAction();
       return null;
     }
 
@@ -198,7 +184,7 @@ export class WebviewProvider {
 
     if (response.type == WindowProviderResponseEnums.cancelResponse) {
       console.warn('Cancelled the re-login action');
-      await this.cancelAction();
+      this.cancelAction();
       return null;
     }
 
