@@ -162,8 +162,7 @@ export class WebviewProvider {
 
     if (response.type == WindowProviderResponseEnums.cancelResponse) {
       console.warn('Cancelled the login action');
-      await this.cancelAction();
-      return null;
+      throw new Error('Login cancelled');
     }
 
     if (!response.payload.data) {
