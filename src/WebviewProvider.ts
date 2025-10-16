@@ -95,6 +95,7 @@ export class WebviewProvider {
         }
       };
 
+      // Added message listener in order to intercept origin in which we handle the communication
       getSafeWindow().addEventListener('message', handler);
 
       this.sendPostMessage({
@@ -316,9 +317,11 @@ export class WebviewProvider {
     const safeWindow = getSafeWindow();
 
     const isInIframe = safeWindow.self !== safeWindow.top;
+    console.log('isInIframe', { isInIframe }, { hasParent: safeWindow.parent });
     if (safeWindow.parent && isInIframe) {
       safeWindow.parent.postMessage(message, this.allowedOrigin);
     } else if (safeWindow.ReactNativeWebView) {
+      console.log('sending message from dApp to RN');
       safeWindow.ReactNativeWebView.postMessage(JSON.stringify(message));
     } else if (safeWindow.webkit) {
       safeWindow.webkit.messageHandlers?.jsHandler?.postMessage(
