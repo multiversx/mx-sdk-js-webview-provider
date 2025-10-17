@@ -1,7 +1,7 @@
 import { getSafeWindow } from './getSafeWindow';
 
-export const isMobileWebview = () => {
+export const isMobileWebview = (): boolean => {
   const safeWindow = getSafeWindow();
   // webkit removed because of false positive detection on iOS Chrome mobile browser
-  return safeWindow.ReactNativeWebView; // || safeWindow.webkit;
+  return Boolean(safeWindow.ReactNativeWebView); // || safeWindow.webkit;
 };

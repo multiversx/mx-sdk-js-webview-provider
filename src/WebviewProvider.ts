@@ -13,6 +13,7 @@ import {
 import { getSafeDocument } from './helpers/getSafeDocument';
 import { getSafeWindow } from './helpers/getSafeWindow';
 import { webviewProviderEventHandler } from './webviewProviderEventHandler';
+import { isMobileWebview } from './helpers/isMobileWebview';
 
 interface IWebviewProviderOptions {
   resetStateCallback?: () => void;
@@ -83,7 +84,45 @@ export class WebviewProvider {
   > => {
     let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
-    const handshakePromise = new Promise<any>((resolve, reject) => {
+    const handshakePromise = new Promise<any>(async (resolve, reject) => {
+      const isReactNativeMobileView = isMobileWebview();
+      const controller = new AbortController();
+      const signal = controller.signal;
+
+      timeoutId = setTimeout(() => {
+        if (isReactNativeMobileView) {
+          controller.abort();
+        } else {
+          getSafeWindow().removeEventListener('message', handler);
+        }
+        reject(
+          new Error(
+            `Timeout: Handshake took more than ${this.handshakeResponseTimeout}ms`
+          )
+        );
+      }, this.handshakeResponseTimeout);
+
+      if (isReactNativeMobileView) {
+        const abortPromise = new Promise<never>((_, reject) => {
+          signal.addEventListener('abort', () => {
+            reject(new Error('Handshake could not be established'));
+          });
+        });
+
+        const resolveHandshake = async () => {
+          const result = await this.sendPostMessage({
+            type: WindowProviderRequestEnums.finalizeHandshakeRequest,
+            payload: version
+          });
+
+          resolve(result);
+        };
+
+        await Promise.race([resolveHandshake(), abortPromise]);
+
+        return;
+      }
+
       const handler = (event: MessageEvent) => {
         if (
           event.data?.type ===
@@ -95,33 +134,18 @@ export class WebviewProvider {
         }
       };
 
-      // Added message listener in order to intercept origin in which we handle the communication
       getSafeWindow().addEventListener('message', handler);
 
-      this.sendPostMessage({
-        type: WindowProviderRequestEnums.finalizeHandshakeRequest,
-        payload: version
-      });
-
-      timeoutId = setTimeout(() => {
-        getSafeWindow().removeEventListener('message', handler);
-        reject(
-          new Error(
-            `Timeout: Handshake took more than ${this.handshakeResponseTimeout}ms`
-          )
-        );
-      }, this.handshakeResponseTimeout);
+      return;
     });
 
     return await handshakePromise;
   };
 
   init = async (version?: string) => {
-    console.log('STARTING HANDSHAKE');
     try {
       const { type, payload } = await this.initiateHandshake(version);
 
-      console.log({ type, payload });
       if (
         type === WindowProviderResponseEnums.finalizeHandshakeResponse &&
         payload.data
@@ -129,11 +153,9 @@ export class WebviewProvider {
         this.initialized = true;
       }
     } catch {
-      console.log('NO RESPONSE RECEIVED');
       // No handshake response received
     }
 
-    console.log('INITIALIZED =>>>>', this, this.initialized);
     return this.initialized;
   };
 
@@ -149,7 +171,7 @@ export class WebviewProvider {
 
     if (response.type == WindowProviderResponseEnums.cancelResponse) {
       console.warn('Cancelled the login action');
-      this.cancelAction();
+      await this.cancelAction();
       return null;
     }
 
@@ -185,7 +207,7 @@ export class WebviewProvider {
 
     if (response.type == WindowProviderResponseEnums.cancelResponse) {
       console.warn('Cancelled the re-login action');
-      this.cancelAction();
+      await this.cancelAction();
       return null;
     }
 
@@ -317,11 +339,9 @@ export class WebviewProvider {
     const safeWindow = getSafeWindow();
 
     const isInIframe = safeWindow.self !== safeWindow.top;
-    console.log('isInIframe', { isInIframe }, { hasParent: safeWindow.parent });
     if (safeWindow.parent && isInIframe) {
       safeWindow.parent.postMessage(message, this.allowedOrigin);
     } else if (safeWindow.ReactNativeWebView) {
-      console.log('sending message from dApp to RN');
       safeWindow.ReactNativeWebView.postMessage(JSON.stringify(message));
     } else if (safeWindow.webkit) {
       safeWindow.webkit.messageHandlers?.jsHandler?.postMessage(
