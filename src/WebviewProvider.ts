@@ -93,6 +93,7 @@ export class WebviewProvider {
 
       console.log({ isReactNativeMobileView });
       timeoutId = setTimeout(() => {
+        console.log('timeout', isReactNativeMobileView);
         if (isReactNativeMobileView) {
           controller.abort();
         } else {
@@ -125,7 +126,7 @@ export class WebviewProvider {
       }
 
       const handler = (event: MessageEvent) => {
-        console.log({ event });
+        console.log('EventType', event.data?.type);
         if (
           event.data?.type ===
           WindowProviderResponseEnums.finalizeHandshakeResponse
@@ -137,6 +138,7 @@ export class WebviewProvider {
         }
       };
 
+      console.log('HANDLER ADDED');
       getSafeWindow().addEventListener('message', handler);
     });
 
