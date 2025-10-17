@@ -2,6 +2,15 @@ import { getSafeWindow } from './getSafeWindow';
 
 export const isMobileWebview = (): boolean => {
   const safeWindow = getSafeWindow();
-  // webkit removed because of false positive detection on iOS Chrome mobile browser
-  return Boolean(safeWindow.ReactNativeWebView); // || safeWindow.webkit;
+
+  // if (safeWindow.ReactNativeWebView) {
+  //   return true;
+  // }
+
+  const userAgent = safeWindow.navigator?.userAgent || '';
+
+  console.log('USER AGENT', { userAgent });
+  const isMobileAgent = /Mobi|Android|iPhone|iPad|iPod/i.test(userAgent);
+
+  return isMobileAgent;
 };
