@@ -84,11 +84,14 @@ export class WebviewProvider {
   > => {
     let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
-    const handshakePromise = new Promise<any>(async (resolve, reject) => {
+    const handshakePromise = new Promise<
+      PostMessageReturnType<WindowProviderRequestEnums.finalizeHandshakeRequest>
+    >((resolve, reject) => {
       const isReactNativeMobileView = isMobileWebview();
       const controller = new AbortController();
       const signal = controller.signal;
 
+      console.log({ isReactNativeMobileView });
       timeoutId = setTimeout(() => {
         if (isReactNativeMobileView) {
           controller.abort();
@@ -109,34 +112,32 @@ export class WebviewProvider {
           });
         });
 
-        const resolveHandshake = async () => {
-          const result = await this.sendPostMessage({
-            type: WindowProviderRequestEnums.finalizeHandshakeRequest,
-            payload: version
-          });
+        const resolveHandshake = this.sendPostMessage({
+          type: WindowProviderRequestEnums.finalizeHandshakeRequest,
+          payload: version
+        });
 
-          resolve(result);
-        };
-
-        await Promise.race([resolveHandshake(), abortPromise]);
+        Promise.race([resolveHandshake, abortPromise])
+          .then(resolve)
+          .catch(reject);
 
         return;
       }
 
       const handler = (event: MessageEvent) => {
+        console.log({ event });
         if (
           event.data?.type ===
           WindowProviderResponseEnums.finalizeHandshakeResponse
         ) {
           this.allowedOrigin = event.origin;
           getSafeWindow().removeEventListener('message', handler);
+          clearTimeout(timeoutId);
           resolve(event.data);
         }
       };
 
       getSafeWindow().addEventListener('message', handler);
-
-      return;
     });
 
     return await handshakePromise;
@@ -146,6 +147,7 @@ export class WebviewProvider {
     try {
       const { type, payload } = await this.initiateHandshake(version);
 
+      console.log({ type, payload });
       if (
         type === WindowProviderResponseEnums.finalizeHandshakeResponse &&
         payload.data
