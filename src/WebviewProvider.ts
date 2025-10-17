@@ -91,9 +91,7 @@ export class WebviewProvider {
       const controller = new AbortController();
       const signal = controller.signal;
 
-      console.log({ isReactNativeMobileView });
       timeoutId = setTimeout(() => {
-        console.log('timeout', isReactNativeMobileView);
         if (isReactNativeMobileView) {
           controller.abort();
         } else {
@@ -126,7 +124,6 @@ export class WebviewProvider {
       }
 
       const handler = (event: MessageEvent) => {
-        console.log('EventType', event.data?.type);
         if (
           event.data?.type ===
           WindowProviderResponseEnums.finalizeHandshakeResponse
@@ -138,8 +135,11 @@ export class WebviewProvider {
         }
       };
 
-      console.log('HANDLER ADDED');
       getSafeWindow().addEventListener('message', handler);
+      this.sendPostMessage({
+        type: WindowProviderRequestEnums.finalizeHandshakeRequest,
+        payload: version
+      });
     });
 
     return await handshakePromise;
@@ -149,7 +149,6 @@ export class WebviewProvider {
     try {
       const { type, payload } = await this.initiateHandshake(version);
 
-      console.log({ type, payload });
       if (
         type === WindowProviderResponseEnums.finalizeHandshakeResponse &&
         payload.data
