@@ -111,12 +111,14 @@ export class WebviewProvider {
           });
         });
 
-        const resolveHandshake = this.sendPostMessage({
-          type: WindowProviderRequestEnums.finalizeHandshakeRequest,
-          payload: version
-        });
+        const resolveHandshake = async (): Promise<any> => {
+          return this.sendPostMessage({
+            type: WindowProviderRequestEnums.finalizeHandshakeRequest,
+            payload: version
+          });
+        };
 
-        Promise.race([resolveHandshake, abortPromise])
+        Promise.race([resolveHandshake(), abortPromise])
           .then(resolve)
           .catch(reject);
 
