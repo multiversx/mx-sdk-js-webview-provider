@@ -8,7 +8,14 @@ export const isMobileWebview = (): boolean => {
   }
 
   const userAgent = safeWindow.navigator?.userAgent || '';
-  const isMobileAgent = /Mobi|Android|iPhone|iPad|iPod/i.test(userAgent);
+  const isIosWebView =
+    /iP(hone|od|ad)/.test(userAgent) &&
+    /AppleWebKit/.test(userAgent) &&
+    !/Safari/.test(userAgent);
 
-  return isMobileAgent;
+  const isAndroidWebView =
+    /Android/.test(userAgent) &&
+    (/wv/.test(userAgent) || /Version\/[\d.]+/.test(userAgent));
+
+  return isIosWebView || isAndroidWebView;
 };
