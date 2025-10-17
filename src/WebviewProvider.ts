@@ -86,7 +86,7 @@ export class WebviewProvider {
 
     const handshakePromise = new Promise<
       PostMessageReturnType<WindowProviderRequestEnums.finalizeHandshakeRequest>
-    >((resolve, reject) => {
+    >(async (resolve, reject) => {
       const isReactNativeMobileView = isMobileWebview();
       const controller = new AbortController();
       const signal = controller.signal;
@@ -111,16 +111,16 @@ export class WebviewProvider {
           });
         });
 
-        const resolveHandshake = async (): Promise<any> => {
-          return this.sendPostMessage({
+        const resolveHandshake = async () => {
+          const result = await this.sendPostMessage({
             type: WindowProviderRequestEnums.finalizeHandshakeRequest,
             payload: version
           });
+
+          resolve(result);
         };
 
-        Promise.race([resolveHandshake(), abortPromise])
-          .then(resolve)
-          .catch(reject);
+        await Promise.race([resolveHandshake(), abortPromise]);
 
         return;
       }
