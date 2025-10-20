@@ -82,48 +82,29 @@ export class WebviewProvider {
   ): Promise<
     PostMessageReturnType<WindowProviderRequestEnums.finalizeHandshakeRequest>
   > => {
-    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    const isMobileView = isMobileWebview();
 
-    const handshakePromise = new Promise<
-      PostMessageReturnType<WindowProviderRequestEnums.finalizeHandshakeRequest>
-    >(async (resolve, reject) => {
-      const isReactNativeMobileView = isMobileWebview();
-      const controller = new AbortController();
-      const signal = controller.signal;
+    if (isMobileView) {
+      const handshakePromise = this.sendPostMessage({
+        type: WindowProviderRequestEnums.finalizeHandshakeRequest,
+        payload: version
+      });
 
-      timeoutId = setTimeout(() => {
-        if (isReactNativeMobileView) {
-          controller.abort();
-        } else {
-          getSafeWindow().removeEventListener('message', handler);
-        }
-        reject(
-          new Error(
-            `Timeout: Handshake took more than ${this.handshakeResponseTimeout}ms`
-          )
-        );
-      }, this.handshakeResponseTimeout);
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => {
+          reject(
+            new Error(
+              `Timeout: Handshake took more than ${this.handshakeResponseTimeout}ms`
+            )
+          );
+        }, this.handshakeResponseTimeout);
+      });
 
-      if (isReactNativeMobileView) {
-        const abortPromise = new Promise<never>((_, reject) => {
-          signal.addEventListener('abort', () => {
-            reject(new Error('Handshake could not be established'));
-          });
-        });
+      return await Promise.race([handshakePromise, timeoutPromise]);
+    }
 
-        const resolveHandshake = async () => {
-          const result = await this.sendPostMessage({
-            type: WindowProviderRequestEnums.finalizeHandshakeRequest,
-            payload: version
-          });
-
-          resolve(result);
-        };
-
-        await Promise.race([resolveHandshake(), abortPromise]);
-
-        return;
-      }
+    return await new Promise((resolve, reject) => {
+      let timeoutId: ReturnType<typeof setTimeout>;
 
       const handler = (event: MessageEvent) => {
         if (
@@ -137,24 +118,29 @@ export class WebviewProvider {
         }
       };
 
+      timeoutId = setTimeout(() => {
+        getSafeWindow().removeEventListener('message', handler);
+        reject(
+          new Error(
+            `Timeout: Handshake took more than ${this.handshakeResponseTimeout}ms`
+          )
+        );
+      }, this.handshakeResponseTimeout);
+
       getSafeWindow().addEventListener('message', handler);
+
       this.sendPostMessage({
         type: WindowProviderRequestEnums.finalizeHandshakeRequest,
         payload: version
       });
     });
-
-    return await handshakePromise;
   };
 
   init = async (version?: string) => {
     try {
-      const { type, payload } = await this.initiateHandshake(version);
+      const { type } = await this.initiateHandshake(version);
 
-      if (
-        type === WindowProviderResponseEnums.finalizeHandshakeResponse &&
-        payload.data
-      ) {
+      if (type === WindowProviderResponseEnums.finalizeHandshakeResponse) {
         this.initialized = true;
       }
     } catch {
