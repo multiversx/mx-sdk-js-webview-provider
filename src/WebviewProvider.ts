@@ -13,6 +13,7 @@ import {
 import { getSafeDocument } from './helpers/getSafeDocument';
 import { getSafeWindow } from './helpers/getSafeWindow';
 import { webviewProviderEventHandler } from './webviewProviderEventHandler';
+import { isMobileWebview } from './helpers/isMobileWebview';
 
 interface IWebviewProviderOptions {
   resetStateCallback?: () => void;
@@ -81,9 +82,30 @@ export class WebviewProvider {
   ): Promise<
     PostMessageReturnType<WindowProviderRequestEnums.finalizeHandshakeRequest>
   > => {
-    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    const isMobileView = isMobileWebview();
 
-    const handshakePromise = new Promise<any>((resolve, reject) => {
+    if (isMobileView) {
+      const handshakePromise = this.sendPostMessage({
+        type: WindowProviderRequestEnums.finalizeHandshakeRequest,
+        payload: version
+      });
+
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => {
+          reject(
+            new Error(
+              `Timeout: Handshake took more than ${this.handshakeResponseTimeout}ms`
+            )
+          );
+        }, this.handshakeResponseTimeout);
+      });
+
+      return await Promise.race([handshakePromise, timeoutPromise]);
+    }
+
+    return await new Promise((resolve, reject) => {
+      let timeoutId: ReturnType<typeof setTimeout>;
+
       const handler = (event: MessageEvent) => {
         if (
           event.data?.type ===
@@ -91,16 +113,10 @@ export class WebviewProvider {
         ) {
           this.allowedOrigin = event.origin;
           getSafeWindow().removeEventListener('message', handler);
+          clearTimeout(timeoutId);
           resolve(event.data);
         }
       };
-
-      getSafeWindow().addEventListener('message', handler);
-
-      this.sendPostMessage({
-        type: WindowProviderRequestEnums.finalizeHandshakeRequest,
-        payload: version
-      });
 
       timeoutId = setTimeout(() => {
         getSafeWindow().removeEventListener('message', handler);
@@ -110,37 +126,21 @@ export class WebviewProvider {
           )
         );
       }, this.handshakeResponseTimeout);
-    });
 
-    return await handshakePromise;
+      getSafeWindow().addEventListener('message', handler);
+
+      this.sendPostMessage({
+        type: WindowProviderRequestEnums.finalizeHandshakeRequest,
+        payload: version
+      });
+    });
   };
 
-  private initiateReactNativeHandshake() {
-    this.initialized = true;
-
-    this.sendPostMessage({
-      type: WindowProviderRequestEnums.finalizeHandshakeRequest,
-      payload: undefined
-    });
-
-    return this.initialized;
-  }
-
   init = async (version?: string) => {
-    const safeWindow = getSafeWindow();
-
-    // Backwards compatible for ReactNative
-    if (safeWindow.ReactNativeWebView) {
-      return this.initiateReactNativeHandshake();
-    }
-
     try {
-      const { type, payload } = await this.initiateHandshake(version);
+      const { type } = await this.initiateHandshake(version);
 
-      if (
-        type === WindowProviderResponseEnums.finalizeHandshakeResponse &&
-        payload.data
-      ) {
+      if (type === WindowProviderResponseEnums.finalizeHandshakeResponse) {
         this.initialized = true;
       }
     } catch {
