@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- ## [[3.2.3](https://github.com/multiversx/mx-sdk-js-webview-provider/pull/35)] - 2025-10-14
+
+- [Throw error on cancel login just like other providers](https://github.com/multiversx/mx-sdk-js-webview-provider/pull/36)
+
 - ## [[3.2.2](https://github.com/multiversx/mx-sdk-js-webview-provider/pull/35)] - 2025-10-13
 
 - [Make `iframe` have precedence other options](https://github.com/multiversx/mx-sdk-js-webview-provider/pull/34)
