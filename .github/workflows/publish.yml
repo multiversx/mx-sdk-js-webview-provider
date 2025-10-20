@@ -10,8 +10,8 @@ jobs:
   publish-npm:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v1
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
           node-version: 18
           registry-url: https://registry.npmjs.org/
@@ -25,7 +25,18 @@ jobs:
           RELEASE_TAG=v$(node -p "require('./package.json').version")
           gh release create $RELEASE_TAG --target=$GITHUB_SHA --title="$RELEASE_TAG" --generate-notes
 
-      - name: Publish to npmjs
+      - name: Get package info
+        id: package
+        uses: andreigiura/action-nodejs-package-info@v1.0.2
+
+      - name: Publish to npmjs (prerelease)
         env:
-          NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
-        run: npm publish --access=public
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        if: ${{ steps.package.outputs.is-prerelease == 'true' }}
+        run: npm publish --tag next
+
+      - name: Publish to npmjs (stable)
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        if: ${{ steps.package.outputs.is-prerelease == 'false' }}
+        run: npm publish --tag latest
