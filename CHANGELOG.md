@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- ## [[3.2.4](https://github.com/multiversx/mx-sdk-js-webview-provider/pull/40)] - 2025-10-20
+
+- [Sync ReactNative handshake with web](https://github.com/multiversx/mx-sdk-js-webview-provider/pull/39)
 - ## [[3.2.3](https://github.com/multiversx/mx-sdk-js-webview-provider/pull/35)] - 2025-10-14
 
 - [Throw error on cancel login just like other providers](https://github.com/multiversx/mx-sdk-js-webview-provider/pull/36)
