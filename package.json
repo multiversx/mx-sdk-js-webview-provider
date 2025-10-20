@@ -1,6 +1,6 @@
 {
   "name": "@multiversx/sdk-webview-provider",
-  "version": "3.2.3-alpha.10",
+  "version": "3.2.3-alpha.11",
   "description": "SDK Webview Provider",
   "main": "out/index.js",
   "types": "out/index.d.js",
