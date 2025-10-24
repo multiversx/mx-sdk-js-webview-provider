@@ -13,7 +13,7 @@ import {
 import { getSafeDocument } from './helpers/getSafeDocument';
 import { getSafeWindow } from './helpers/getSafeWindow';
 import { webviewProviderEventHandler } from './webviewProviderEventHandler';
-import { getPlatform } from './helpers/getPlatform';
+import { getPlatform, PlatformsEnum } from './helpers/getPlatform';
 
 interface IWebviewProviderOptions {
   resetStateCallback?: () => void;
@@ -83,9 +83,9 @@ export class WebviewProvider {
     PostMessageReturnType<WindowProviderRequestEnums.finalizeHandshakeRequest>
   > => {
     const safeWindow = getSafeWindow();
-    const platform = getPlatform(safeWindow);
+    const platform = getPlatform();
 
-    if (platform === "webview") {
+    if (platform === PlatformsEnum.WEBVIEW) {
       const handshakePromise = this.sendPostMessage({
         type: WindowProviderRequestEnums.finalizeHandshakeRequest,
         payload: version
@@ -328,13 +328,13 @@ export class WebviewProvider {
     message: PostMessageParamsType<T>
   ): Promise<PostMessageReturnType<T>> => {
     const safeWindow = getSafeWindow();
-    const platform = getPlatform(safeWindow);
+    const platform = getPlatform();
 
-    if (platform === "iframe") {
+    if (platform === PlatformsEnum.IFRAME) {
       safeWindow.parent.postMessage(message, this.allowedOrigin);
-    } else if (platform === "webview") {
+    } else if (platform === PlatformsEnum.WEBVIEW) {
       safeWindow.ReactNativeWebView.postMessage(JSON.stringify(message));
-    } else if (platform === "webkit") {
+    } else if (platform === PlatformsEnum.WEBKIT) {
       safeWindow.webkit.messageHandlers?.jsHandler?.postMessage(
         JSON.stringify(message),
         this.allowedOrigin
