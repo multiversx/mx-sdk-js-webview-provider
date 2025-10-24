@@ -1,8 +1,7 @@
-import { getSafeWindow } from './getSafeWindow';
 import { getPlatform, PlatformsEnum } from './getPlatform';
 
 export const isMobileWebview = () => {
-  const safeWindow = getSafeWindow();
+  const platform = getPlatform();
   // webkit removed because of false positive detection on iOS Chrome mobile browser
-  return getPlatform() === PlatformsEnum.WEBVIEW;
+  return platform === PlatformsEnum.WEBVIEW;
 };
