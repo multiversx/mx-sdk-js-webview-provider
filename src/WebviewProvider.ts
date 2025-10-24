@@ -13,7 +13,7 @@ import {
 import { getSafeDocument } from './helpers/getSafeDocument';
 import { getSafeWindow } from './helpers/getSafeWindow';
 import { webviewProviderEventHandler } from './webviewProviderEventHandler';
-import { isMobileWebview } from './helpers/isMobileWebview';
+import { getPlatform, PlatformsEnum } from './helpers/getPlatform';
 
 interface IWebviewProviderOptions {
   resetStateCallback?: () => void;
@@ -82,9 +82,10 @@ export class WebviewProvider {
   ): Promise<
     PostMessageReturnType<WindowProviderRequestEnums.finalizeHandshakeRequest>
   > => {
-    const isMobileView = isMobileWebview();
+    const safeWindow = getSafeWindow();
+    const platform = getPlatform();
 
-    if (isMobileView) {
+    if (platform === PlatformsEnum.WEBVIEW) {
       const handshakePromise = this.sendPostMessage({
         type: WindowProviderRequestEnums.finalizeHandshakeRequest,
         payload: version
@@ -112,14 +113,14 @@ export class WebviewProvider {
           WindowProviderResponseEnums.finalizeHandshakeResponse
         ) {
           this.allowedOrigin = event.origin;
-          getSafeWindow().removeEventListener('message', handler);
+          safeWindow.removeEventListener('message', handler);
           clearTimeout(timeoutId);
           resolve(event.data);
         }
       };
 
       timeoutId = setTimeout(() => {
-        getSafeWindow().removeEventListener('message', handler);
+        safeWindow.removeEventListener('message', handler);
         reject(
           new Error(
             `Timeout: Handshake took more than ${this.handshakeResponseTimeout}ms`
@@ -127,7 +128,7 @@ export class WebviewProvider {
         );
       }, this.handshakeResponseTimeout);
 
-      getSafeWindow().addEventListener('message', handler);
+      safeWindow.addEventListener('message', handler);
 
       this.sendPostMessage({
         type: WindowProviderRequestEnums.finalizeHandshakeRequest,
@@ -327,13 +328,13 @@ export class WebviewProvider {
     message: PostMessageParamsType<T>
   ): Promise<PostMessageReturnType<T>> => {
     const safeWindow = getSafeWindow();
+    const platform = getPlatform();
 
-    const isInIframe = safeWindow.self !== safeWindow.top;
-    if (safeWindow.parent && isInIframe) {
+    if (platform === PlatformsEnum.IFRAME) {
       safeWindow.parent.postMessage(message, this.allowedOrigin);
-    } else if (safeWindow.ReactNativeWebView) {
+    } else if (platform === PlatformsEnum.WEBVIEW) {
       safeWindow.ReactNativeWebView.postMessage(JSON.stringify(message));
-    } else if (safeWindow.webkit) {
+    } else if (platform === PlatformsEnum.WEBKIT) {
       safeWindow.webkit.messageHandlers?.jsHandler?.postMessage(
         JSON.stringify(message),
         this.allowedOrigin
