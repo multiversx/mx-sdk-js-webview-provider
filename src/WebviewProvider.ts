@@ -36,6 +36,7 @@ export class WebviewProvider {
   private account: IProviderAccount = { address: '' };
   private handshakeResponseTimeout: number = HANDSHAKE_RESPONSE_TIMEOUT;
   private allowedOrigin = '*';
+  private resetStateCallback?: () => void;
 
   static getInstance(options?: IWebviewProviderOptions) {
     if (!WebviewProvider._instance) {
@@ -45,23 +46,24 @@ export class WebviewProvider {
   }
 
   constructor(options?: IWebviewProviderOptions) {
-    if (options?.resetStateCallback) {
-      this.resetState(options.resetStateCallback);
-    }
+    this.resetStateCallback = options?.resetStateCallback;
   }
 
-  private resetState = (resetStateCallback?: () => void) => {
+  private setupResetStateListener = () => {
     getSafeWindow().addEventListener?.(
       'message',
       webviewProviderEventHandler(
         WindowProviderResponseEnums.resetStateResponse,
         (data) => {
+          console.log('resetStateResponse received', data.type);
           if (data.type === WindowProviderResponseEnums.resetStateResponse) {
-            resetStateCallback?.();
+            console.log('before finalizeResetState');
+            this.finalizeResetState();
+            console.log('after finalizeResetState');
+            this.resetStateCallback?.();
 
-            setTimeout(() => {
-              this.finalizeResetState();
-            }, 500);
+            console.log('after resetStateCallback');
+            this.initialized = false;
           }
         },
         this.allowedOrigin
@@ -88,6 +90,10 @@ export class WebviewProvider {
     const safeWindow = getSafeWindow();
     const platform = getPlatform();
 
+    console.log('Init handshake: ', {
+      platform,
+      isInitialized: this.initialized
+    });
     if (platform === PlatformsEnum.WEBVIEW) {
       const handshakePromise = this.sendPostMessage({
         type: WindowProviderRequestEnums.finalizeHandshakeRequest,
@@ -144,8 +150,13 @@ export class WebviewProvider {
     try {
       const { type } = await this.initiateHandshake(version);
 
+      console.log({ type });
       if (type === WindowProviderResponseEnums.finalizeHandshakeResponse) {
         this.initialized = true;
+
+        if (this.resetStateCallback) {
+          this.setupResetStateListener();
+        }
       }
     } catch {
       // No handshake response received
