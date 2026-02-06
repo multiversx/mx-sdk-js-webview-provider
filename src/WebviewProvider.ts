@@ -55,14 +55,9 @@ export class WebviewProvider {
       webviewProviderEventHandler(
         WindowProviderResponseEnums.resetStateResponse,
         (data) => {
-          console.log('resetStateResponse received', data.type);
           if (data.type === WindowProviderResponseEnums.resetStateResponse) {
-            console.log('before finalizeResetState');
             this.finalizeResetState();
-            console.log('after finalizeResetState');
             this.resetStateCallback?.();
-
-            console.log('after resetStateCallback');
             this.initialized = false;
           }
         },
@@ -90,10 +85,6 @@ export class WebviewProvider {
     const safeWindow = getSafeWindow();
     const platform = getPlatform();
 
-    console.log('Init handshake: ', {
-      platform,
-      isInitialized: this.initialized
-    });
     if (platform === PlatformsEnum.WEBVIEW) {
       const handshakePromise = this.sendPostMessage({
         type: WindowProviderRequestEnums.finalizeHandshakeRequest,
@@ -150,7 +141,6 @@ export class WebviewProvider {
     try {
       const { type } = await this.initiateHandshake(version);
 
-      console.log({ type });
       if (type === WindowProviderResponseEnums.finalizeHandshakeResponse) {
         this.initialized = true;
 
