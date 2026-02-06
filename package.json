@@ -1,6 +1,6 @@
 {
   "name": "@multiversx/sdk-webview-provider",
-  "version": "3.2.6",
+  "version": "3.2.7",
   "description": "SDK Webview Provider",
   "main": "out/index.js",
   "types": "out/index.d.js",
@@ -10,7 +10,8 @@
   "scripts": {
     "compile": "tsc -p tsconfig.json",
     "pretest": "npm run compile",
-    "prepare": "npm run compile"
+    "prepare": "npm run compile",
+    "publish-verdaccio": "npm run compile && npm publish --registry http://localhost:4873/"
   },
   "author": "MultiversX",
   "license": "MIT",

@@ -36,6 +36,7 @@ export class WebviewProvider {
   private account: IProviderAccount = { address: '' };
   private handshakeResponseTimeout: number = HANDSHAKE_RESPONSE_TIMEOUT;
   private allowedOrigin = '*';
+  private resetStateCallback?: () => void;
 
   static getInstance(options?: IWebviewProviderOptions) {
     if (!WebviewProvider._instance) {
@@ -45,23 +46,19 @@ export class WebviewProvider {
   }
 
   constructor(options?: IWebviewProviderOptions) {
-    if (options?.resetStateCallback) {
-      this.resetState(options.resetStateCallback);
-    }
+    this.resetStateCallback = options?.resetStateCallback;
   }
 
-  private resetState = (resetStateCallback?: () => void) => {
+  private setupResetStateListener = () => {
     getSafeWindow().addEventListener?.(
       'message',
       webviewProviderEventHandler(
         WindowProviderResponseEnums.resetStateResponse,
         (data) => {
           if (data.type === WindowProviderResponseEnums.resetStateResponse) {
-            resetStateCallback?.();
-
-            setTimeout(() => {
-              this.finalizeResetState();
-            }, 500);
+            this.finalizeResetState();
+            this.resetStateCallback?.();
+            this.initialized = false;
           }
         },
         this.allowedOrigin
@@ -146,6 +143,10 @@ export class WebviewProvider {
 
       if (type === WindowProviderResponseEnums.finalizeHandshakeResponse) {
         this.initialized = true;
+
+        if (this.resetStateCallback) {
+          this.setupResetStateListener();
+        }
       }
     } catch {
       // No handshake response received
